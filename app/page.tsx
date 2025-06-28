@@ -1,103 +1,168 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Header } from '@/components/header';
+import { Footer } from '@/components/footer';
+import { PostCard } from '@/components/post-card';
+import { SubstackPost, SearchResult } from '@/types';
+import { Sparkles, BookOpen, Search as SearchIcon } from 'lucide-react';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [posts, setPosts] = useState<SubstackPost[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<SubstackPost[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+  useEffect(() => {
+    async function loadPosts() {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/posts');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setPosts(data.posts || []);
+        setFilteredPosts(data.posts || []);
+      } catch (err) {
+        console.error('Error loading posts:', err);
+        setError('Failed to load posts. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadPosts();
+  }, []);
+
+  const handleSearchResults = (results: SearchResult[]) => {
+    setSearchResults(results);
+    setIsSearchActive(results.length > 0);
+
+    if (results.length > 0) {
+      setFilteredPosts(results.map(r => r.post));
+    } else {
+      setFilteredPosts(posts);
+    }
+  };
+
+  const displayPosts = isSearchActive ? searchResults.map(r => r.post) : posts.slice(0, 10);
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header posts={posts} onSearchResults={handleSearchResults} />
+
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="py-16 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
+          <div className="container px-4 mx-auto text-center">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <Sparkles className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 md:text-6xl">
+                  Nate's Digital Garden
+                </h1>
+              </div>
+
+              <p className="mb-8 text-lg leading-relaxed text-slate-600 dark:text-slate-300">
+                An AI-enhanced collection of thoughts, ideas, and insights.
+                Automatically synced from Substack with semantic search to help you discover
+                connected ideas across all writings.
+              </p>
+
+              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                  <BookOpen className="w-4 h-4" />
+                  <span>{posts.length} posts archived</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                  <SearchIcon className="w-4 h-4" />
+                  <span>AI-powered semantic search</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Auto-updated from Substack</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Posts Section */}
+        <section className="py-16">
+          <div className="container px-4 mx-auto">
+            {isLoading ? (
+              <div className="grid gap-6 md:gap-8">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="p-6 bg-white border rounded-lg animate-pulse border-slate-200 dark:border-slate-700 dark:bg-slate-800">
+                    <div className="h-6 mb-4 rounded bg-slate-200 dark:bg-slate-700"></div>
+                    <div className="space-y-2">
+                      <div className="w-3/4 h-4 rounded bg-slate-200 dark:bg-slate-700"></div>
+                      <div className="w-1/2 h-4 rounded bg-slate-200 dark:bg-slate-700"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="py-12 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="p-6 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+                    <h3 className="mb-2 text-lg font-semibold text-red-900 dark:text-red-100">
+                      Error Loading Posts
+                    </h3>
+                    <p className="text-red-700 dark:text-red-300">{error}</p>
+                  </div>
+                </div>
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="py-12 text-center">
+                <div className="max-w-md mx-auto">
+                  <BookOpen className="w-12 h-12 mx-auto mb-4 text-slate-400" />
+                  <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    No Posts Yet
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    Posts will appear here once they're synced from Substack.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="mb-8">
+                  <h2 className="mb-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+                    {isSearchActive ? `Search Results (${searchResults.length})` : 'Latest Posts'}
+                  </h2>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    {isSearchActive
+                      ? 'Posts matching your search query'
+                      : 'Recent thoughts and insights from the garden'
+                    }
+                  </p>
+                </div>
+
+                <div className="grid gap-6 md:gap-8">
+                  {displayPosts.map((post) => (
+                    <PostCard key={post.id} post={post} />
+                  ))}
+                </div>
+
+                {!isSearchActive && posts.length > 10 && (
+                  <div className="mt-12 text-center">
+                    <button className="inline-flex items-center gap-2 px-6 py-3 text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+                      <BookOpen className="w-4 h-4" />
+                      View All Posts ({posts.length})
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+      <Footer />
     </div>
   );
 }
