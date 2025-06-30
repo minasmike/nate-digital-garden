@@ -20,7 +20,7 @@ export default function ArchivePage() {
         if (!response.ok) throw new Error('Failed to fetch posts');
         const data = await response.json();
         setPosts(data.posts || []);
-      } catch (err) {
+      } catch {
         setError('Failed to load posts.');
       } finally {
         setIsLoading(false);
@@ -31,7 +31,7 @@ export default function ArchivePage() {
 
   return (
     <>
-      <Header posts={posts} onSearchResults={() => {}} />
+      <Header onSearchResults={() => {}} />
       <div className="container min-h-screen px-4 py-16 mx-auto">
         <h1 className="mb-8 text-4xl font-bold text-center text-slate-900 dark:text-slate-100">Recent Posts</h1>
         {isLoading ? (

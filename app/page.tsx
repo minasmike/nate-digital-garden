@@ -6,7 +6,7 @@ import { Footer } from '@/components/footer';
 import { PostCard } from '@/components/post-card';
 import { SubstackPost, SearchResult } from '@/types';
 import { Sparkles, BookOpen, Search as SearchIcon } from 'lucide-react';
-import { decode } from 'he';
+import he from 'he';
 import { stripHtml } from '@/lib/utils';
 import { formatDate } from '@/lib/utils';
 import {
@@ -15,16 +15,21 @@ import {
   ModalContent,
   useModal
 } from '@/components/modal';
+import Image from 'next/image';
+
+// Add summary as an optional property to SubstackPost for UI state
+interface SubstackPostWithSummary extends SubstackPost {
+  summary?: string;
+}
 
 export default function Home() {
   const [posts, setPosts] = useState<SubstackPost[]>([]);
-  const [filteredPosts, setFilteredPosts] = useState<SubstackPost[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAllPosts, setShowAllPosts] = useState(false);
-  const [modalPost, setModalPost] = useState<SubstackPost | null>(null);
+  const [modalPost, setModalPost] = useState<SubstackPostWithSummary | null>(null);
 
   useEffect(() => {
     async function loadPosts() {
@@ -36,7 +41,6 @@ export default function Home() {
         }
         const data = await response.json();
         setPosts(data.posts || []);
-        setFilteredPosts(data.posts || []);
       } catch (err) {
         console.error('Error loading posts:', err);
         setError('Failed to load posts. Please try again later.');
@@ -53,9 +57,9 @@ export default function Home() {
     setIsSearchActive(results.length > 0);
 
     if (results.length > 0) {
-      setFilteredPosts(results.map(r => r.post));
+      // setFilteredPosts(results.map(r => r.post));
     } else {
-      setFilteredPosts(posts);
+      // setFilteredPosts(posts);
     }
   };
 
@@ -63,7 +67,6 @@ export default function Home() {
     <ModalProvider>
       <HomeContent
         posts={posts}
-        filteredPosts={filteredPosts}
         searchResults={searchResults}
         isLoading={isLoading}
         isSearchActive={isSearchActive}
@@ -80,7 +83,6 @@ export default function Home() {
 
 function HomeContent({
   posts,
-  filteredPosts,
   searchResults,
   isLoading,
   isSearchActive,
@@ -90,17 +92,28 @@ function HomeContent({
   modalPost,
   setModalPost,
   handleSearchResults,
-}: any) {
-  const { open, setOpen } = useModal();
+}: {
+  posts: SubstackPost[];
+  searchResults: SearchResult[];
+  isLoading: boolean;
+  isSearchActive: boolean;
+  error: string | null;
+  showAllPosts: boolean;
+  setShowAllPosts: (show: boolean) => void;
+  modalPost: SubstackPostWithSummary | null;
+  setModalPost: (post: SubstackPostWithSummary | null) => void;
+  handleSearchResults: (results: SearchResult[]) => void;
+}) {
+  const { setOpen } = useModal();
   const displayPosts = isSearchActive
-    ? searchResults.map((r: any) => r.post)
+    ? searchResults.map((r: SearchResult) => r.post)
     : showAllPosts
     ? posts
     : posts.slice(0, 10);
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header posts={posts} onSearchResults={handleSearchResults} />
+      <Header onSearchResults={handleSearchResults} />
 
       <main className="flex-1">
         {/* Hero Section */}
@@ -110,7 +123,7 @@ function HomeContent({
               <div className="flex items-center justify-center gap-2 mb-6">
                 <Sparkles className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                 <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 md:text-6xl">
-                  Nate's Digital Garden
+                  Nate&apos;s Digital Garden
                 </h1>
               </div>
               <p className="mb-8 text-lg leading-relaxed text-slate-600 dark:text-slate-300">
@@ -171,7 +184,7 @@ function HomeContent({
                     No Posts Yet
                   </h3>
                   <p className="text-slate-600 dark:text-slate-400">
-                    Posts will appear here once they're synced from Substack.
+                    Posts will appear here once they&apos;re synced from Substack.
                   </p>
                 </div>
               </div>
@@ -196,8 +209,8 @@ function HomeContent({
                         setModalPost(post);
                         setOpen(true);
                       }}
-                      onSummarize={async (post: SubstackPost) => {
-                        let plainText = decode(stripHtml(post.content));
+                      onSummarize={async (post: SubstackPostWithSummary) => {
+                        let plainText = he.decode(stripHtml(post.content));
                         // Limit input to 2048 characters for Hugging Face API
                         if (plainText.length > 2048) {
                           plainText = plainText.slice(0, 2048);
@@ -212,14 +225,14 @@ function HomeContent({
                           });
                           const data = await res.json();
                           if (data.error) {
-                            setModalPost((prev: SubstackPost | null) => prev && prev.id === post.id ? { ...prev, summary: `Error: ${data.error}` } : prev);
+                            setModalPost({ ...post, summary: `Error: ${data.error}` });
                           } else {
-                            setModalPost((prev: SubstackPost | null) => prev && prev.id === post.id ? { ...prev, summary: data.summary || 'No summary available.' } : prev);
+                            setModalPost({ ...post, summary: data.summary || 'No summary available.' });
                           }
                         } catch (e: unknown) {
                           let message = 'Failed to summarize.';
-                          if (e && typeof e === 'object' && 'message' in e) message = (e as any).message;
-                          setModalPost((prev: SubstackPost | null) => prev && prev.id === post.id ? { ...prev, summary: message } : prev);
+                          if (e && typeof e === 'object' && 'message' in e) message = (e as { message: string }).message;
+                          setModalPost({ ...post, summary: message });
                         }
                       }}
                     />
@@ -246,7 +259,7 @@ function HomeContent({
       <ModalBody>
         {modalPost && (
           <ModalContent className="w-full max-w-4xl p-10 md:p-14">
-            <h2 className="mb-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{decode(modalPost.title)}</h2>
+            <h2 className="mb-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{he.decode(modalPost.title)}</h2>
             <div className="mb-4 text-sm text-slate-500 dark:text-slate-400">
               <span>{modalPost.author}</span> · <span>{formatDate(modalPost.pubDate)}</span>
             </div>
@@ -270,7 +283,7 @@ function HomeContent({
                     Sorry, your browser does not support embedded videos.
                   </video>
                 ) : (
-                  <img src={modalPost.image} alt={decode(modalPost.title)} className="w-full mb-4 rounded" />
+                  <Image src={modalPost.image} alt={he.decode(modalPost.title)} className="w-full mb-4 rounded" width={800} height={600} />
                 ))}
               </>
             ) : (
@@ -290,7 +303,7 @@ function HomeContent({
                     Sorry, your browser does not support embedded videos.
                   </video>
                 ) : (
-                  <img src={modalPost.image} alt={decode(modalPost.title)} className="w-full mb-4 rounded" />
+                  <Image src={modalPost.image} alt={he.decode(modalPost.title)} className="w-full mb-4 rounded" width={800} height={600} />
                 ))}
                 <div dangerouslySetInnerHTML={{ __html: modalPost.content }} />
               </>

@@ -13,13 +13,33 @@ const parser = new Parser({
 // Nate's Newsletter Substack RSS URL
 const SUBSTACK_RSS_URL = process.env.SUBSTACK_RSS_URL || 'https://natesnewsletter.substack.com/feed';
 
+// Define a type for RSS items with custom fields
+interface RSSItem {
+  guid?: string;
+  link?: string;
+  title?: string;
+  content?: string;
+  contentEncoded?: string;
+  description?: string;
+  pubDate?: string;
+  creator?: string;
+  categories?: string[];
+  contentSnippet?: string;
+  isoDate?: string;
+  enclosure?: { url?: string };
+  'media:content'?: { $?: { url?: string } };
+  'itunes:image'?: { href?: string };
+  'media:thumbnail'?: { url?: string };
+}
+
 export async function fetchSubstackPosts(): Promise<SubstackPost[]> {
   try {
     const feed = await parser.parseURL(SUBSTACK_RSS_URL);
 
-    return feed.items.map((item, index) => {
-      // Clean HTML content for excerpt
-      const cleanContent = item.contentEncoded || item.content || item.description || '';
+    return feed.items.map((item: RSSItem, index: number) => {
+      const contentEncoded = item.contentEncoded;
+      const description = item.description;
+      const cleanContent = contentEncoded || item.content || description || '';
       const textContent = cleanContent.replace(/<[^>]*>/g, '').trim();
       const excerpt = textContent.substring(0, 200) + (textContent.length > 200 ? '...' : '');
 
@@ -28,8 +48,8 @@ export async function fetchSubstackPosts(): Promise<SubstackPost[]> {
       // If enclosure is an image or video, use it
       if (item.enclosure && item.enclosure.url && /\.(jpg|jpeg|png|gif|webp|mp4|webm|ogg)$/i.test(item.enclosure.url)) {
         image = item.enclosure.url;
-      } else if ((item as any)['media:content'] && (item as any)['media:content']['$'] && (item as any)['media:content']['$'].url) {
-        image = (item as any)['media:content']['$'].url;
+      } else if (item['media:content']?.$?.url) {
+        image = item['media:content'].$.url;
       } else {
         // Try to extract first <img src="..."> from content
         const imgMatch = cleanContent.match(/<img[^>]+src=["']([^"'>]+)["']/i);
@@ -39,10 +59,10 @@ export async function fetchSubstackPosts(): Promise<SubstackPost[]> {
       }
       // If enclosure is an mp3 and no image found, try itunes:image or media:thumbnail
       if ((!image || image === '') && item.enclosure && item.enclosure.url && /\.mp3$/i.test(item.enclosure.url)) {
-        if ((item as any)['itunes:image'] && (item as any)['itunes:image'].href) {
-          image = (item as any)['itunes:image'].href;
-        } else if ((item as any)['media:thumbnail'] && (item as any)['media:thumbnail'].url) {
-          image = (item as any)['media:thumbnail'].url;
+        if (item['itunes:image']?.href) {
+          image = item['itunes:image'].href;
+        } else if (item['media:thumbnail']?.url) {
+          image = item['media:thumbnail'].url;
         }
       }
       return {

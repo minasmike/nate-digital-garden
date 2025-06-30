@@ -2,15 +2,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from './theme-toggle';
 import { Search } from './search';
-import { SubstackPost, SearchResult } from '@/types';
-import { BookOpen, Rss } from 'lucide-react';
+import { SearchResult } from '@/types';
+import { Rss } from 'lucide-react';
 
 interface HeaderProps {
-  posts: SubstackPost[];
   onSearchResults: (results: SearchResult[]) => void;
 }
 
-export function Header({ posts, onSearchResults }: HeaderProps) {
+export function Header({ onSearchResults }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-slate-700 dark:bg-slate-900/95 dark:supports-[backdrop-filter]:bg-slate-900/60">
       <div className="container flex items-center justify-between h-16 px-4 mx-auto">
@@ -24,7 +23,7 @@ export function Header({ posts, onSearchResults }: HeaderProps) {
               height={32}
               className="hidden md:block"
             />
-            <span>Nate's Digital Garden</span>
+            <span>Nate&apos;s Digital Garden</span>
           </Link>
         </div>
 
@@ -56,7 +55,7 @@ export function Header({ posts, onSearchResults }: HeaderProps) {
             About
           </Link>
           <div style={{ width: '1.5rem' }} />
-          <Search posts={posts} onResults={onSearchResults} />
+          <Search onResults={onSearchResults} />
 
           <div className="flex items-center gap-2">
             <Link

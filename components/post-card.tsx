@@ -3,6 +3,7 @@ import { SubstackPost } from '@/types';
 import { formatDate, getReadingTime, stripHtml } from '@/lib/utils';
 import { ExternalLink, Calendar, Clock } from 'lucide-react';
 import { decode } from 'he';
+import Image from 'next/image';
 
 interface PostCardProps {
   post: SubstackPost;
@@ -96,11 +97,15 @@ export function PostCard({ post, showExcerpt = true, className = '', onPreview, 
                 preload="none"
               />
             ) : (
-              <img
+              <Image
                 src={post.image}
                 alt={decode(post.title)}
                 className="object-cover w-full h-full"
                 loading="lazy"
+                width={128}
+                height={128}
+                style={{ objectFit: 'cover' }}
+                unoptimized
               />
             )}
           </div>

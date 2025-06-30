@@ -6,51 +6,51 @@ export function Footer() {
 
   return (
     <footer className="border-t border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container px-4 py-8 mx-auto">
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-            <span>© {currentYear} Nate's Digital Garden</span>
+            <span>© {currentYear} Nate&apos;s Digital Garden</span>
             <span>•</span>
             <span className="flex items-center gap-1">
-              Built with <Heart className="h-3 w-3 text-red-500" /> and{' '}
-              <Coffee className="h-3 w-3 text-amber-600" />
+              Built with <Heart className="w-3 h-3 text-red-500" /> and{' '}
+              <Coffee className="w-3 h-3 text-amber-600" />
             </span>
           </div>
-          
+
           <div className="flex items-center gap-4 text-sm">
-            <Link 
+            <Link
               href="/privacy"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors"
+              className="transition-colors text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
             >
               Privacy
             </Link>
-            <Link 
+            <Link
               href="/rss"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors"
+              className="transition-colors text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
             >
               RSS
             </Link>
-            <Link 
+            <Link
               href="https://github.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors"
+              className="transition-colors text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
             >
               Source
             </Link>
           </div>
         </div>
-        
-        <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-500">
+
+        <div className="mt-6 text-xs text-center text-slate-500 dark:text-slate-500">
           <p>
             Automatically synced from{' '}
-            <Link 
+            <Link
               href={process.env.NEXT_PUBLIC_SUBSTACK_URL || '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-slate-700 dark:hover:text-slate-300"
             >
-              Nate's Substack
+              Nate&apos;s Substack
             </Link>
             {' '}• Enhanced with AI-powered search
           </p>

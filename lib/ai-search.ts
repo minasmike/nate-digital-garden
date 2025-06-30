@@ -7,7 +7,7 @@ const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY;
 const HF_EMBEDDING_MODEL = 'sentence-transformers/all-MiniLM-L6-v2'; // You can change to another model if desired
 
 // Simple in-memory storage for embeddings (in production, use a vector database)
-let embeddingsCache: EmbeddingData[] = loadEmbeddingsCache();
+const embeddingsCache: EmbeddingData[] = loadEmbeddingsCache();
 
 export async function generateEmbedding(text: string): Promise<number[]> {
   if (!HUGGINGFACE_API_KEY) {
@@ -39,7 +39,6 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
 export async function createPostEmbeddings(posts: SubstackPost[]): Promise<void> {
   const newEmbeddings: EmbeddingData[] = [];
-  let updated = false;
 
   for (const post of posts) {
     // Skip if already processed
@@ -76,7 +75,6 @@ export async function createPostEmbeddings(posts: SubstackPost[]): Promise<void>
           section: 'content',
         });
       }
-      updated = true;
     } catch (error) {
       console.error(`Error creating embeddings for post ${post.id}:`, error);
     }

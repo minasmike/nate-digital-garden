@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     const data = await response.json();
     const summary = Array.isArray(data) && data[0]?.summary_text ? data[0].summary_text : '';
     return NextResponse.json({ summary });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Failed to summarize.' }, { status: 500 });
   }
 }

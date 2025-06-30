@@ -2,17 +2,15 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Search as SearchIcon, X } from 'lucide-react';
-import { SubstackPost, SearchResult } from '@/types';
-import { cn } from '@/lib/utils';
+import { SearchResult } from '@/types';
 import { createPortal } from 'react-dom';
 
 interface SearchProps {
-  posts: SubstackPost[];
   onResults: (results: SearchResult[]) => void;
   placeholder?: string;
 }
 
-export function Search({ posts, onResults, placeholder = "Search Nate's writings..." }: SearchProps) {
+export function Search({ onResults, placeholder = "Search Nate's writings..." }: SearchProps) {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -21,12 +19,24 @@ export function Search({ posts, onResults, placeholder = "Search Nate's writings
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const lastQueryRef = useRef<string | null>(null);
+  const lastResultsRef = useRef<SearchResult[] | null>(null);
 
   const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
       onResults([]);
       setShowResults(false);
+      lastQueryRef.current = null;
+      lastResultsRef.current = null;
+      return;
+    }
+
+    // Prevent redundant search for same query
+    if (lastQueryRef.current === searchQuery && lastResultsRef.current) {
+      setResults(lastResultsRef.current);
+      onResults(lastResultsRef.current);
+      setShowResults(true);
       return;
     }
 
@@ -52,20 +62,27 @@ export function Search({ posts, onResults, placeholder = "Search Nate's writings
         setResults(data.results);
         onResults(data.results);
         setShowResults(true);
+        lastQueryRef.current = searchQuery;
+        lastResultsRef.current = data.results;
       } else {
         setResults([]);
         onResults([]);
         setShowResults(false);
+        lastQueryRef.current = searchQuery;
+        lastResultsRef.current = [];
       }
-    } catch (error: any) {
-      if (error.name === 'AbortError') return; // Ignore aborted requests
+    } catch (error) {
+      if ((error as Error)?.name === 'AbortError') return; // Ignore aborted requests
       console.error('Search error:', error);
       setResults([]);
       onResults([]);
+      setShowResults(false);
+      lastQueryRef.current = searchQuery;
+      lastResultsRef.current = [];
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [onResults]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -129,7 +146,7 @@ export function Search({ posts, onResults, placeholder = "Search Nate's writings
             </div>
           ) : results.length > 0 ? (
             <div className="p-1">
-              {results.map((result, index) => (
+              {results.map((result) => (
                 <SearchResultItem
                   key={result.post.id}
                   result={result}
