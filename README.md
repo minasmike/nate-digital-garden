@@ -28,7 +28,7 @@ A Next.js 15 (App Router) site that automatically curates Nate's Substack conten
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - pnpm (recommended) or npm
 - OpenAI API key (optional, for AI search)
 - Substack RSS URL
@@ -50,16 +50,16 @@ A Next.js 15 (App Router) site that automatically curates Nate's Substack conten
    ```bash
    cp .env.example .env.local
    ```
-   
+
    Edit `.env.local` with your configuration:
    ```env
    # Required
    SUBSTACK_RSS_URL=https://your-substack.substack.com/feed
    NEXT_PUBLIC_SUBSTACK_URL=https://your-substack.substack.com
-   
+
    # Optional (for AI search)
    OPENAI_API_KEY=your_openai_api_key_here
-   
+
    # Optional (for future features)
    ANTHROPIC_API_KEY=your_anthropic_api_key_here
    ```
@@ -152,11 +152,8 @@ nate-digital-garden/
 ## 🔮 Future Enhancements
 
 - [ ] **Post Summarization**: Auto-generate AI summaries
-- [ ] **Related Posts**: ML-powered content recommendations  
-- [ ] **Social Sharing**: One-click Twitter/LinkedIn sharing
+- [ ] **Related Posts**: ML-powered content recommendations
 - [ ] **Newsletter Integration**: Email signup with ConvertKit
-- [ ] **Analytics**: View tracking and popular posts
-- [ ] **Comments**: Discussion system integration
 - [ ] **Full-text Search**: Enhanced search with Algolia
 - [ ] **RSS Output**: Generate custom RSS feeds
 
