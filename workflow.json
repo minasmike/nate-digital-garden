@@ -1,0 +1,89 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "path": "substack-tweet",
+        "responseMode": "lastNode"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"secret\"]}}",
+              "operation": "equals",
+              "value2": "={{$env.NEXT_PUBLIC_N8N_SECRET}}"
+            }
+          ]
+        }
+      },
+      "name": "Auth Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "return {\n  tweet: `\"${$json.postTitle}\"\\n\\n${($json.postExcerpt || '').substring(0, 100)}...\\n\\n${$json.postUrl}\\n\\n#AI #Future`\n};"
+      },
+      "name": "Format Tweet",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "text": "={{$node[\"Format Tweet\"].json.tweet}}",
+        "additionalFields": {}
+      },
+      "name": "Twitter API",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [850, 300],
+      "credentials": {
+        "twitterOAuth2Api": "YourTwitterCredentialsName"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Auth Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auth Check": {
+      "main": [
+        [
+          {
+            "node": "Format Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Tweet": {
+      "main": [
+        [
+          {
+            "node": "Twitter API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

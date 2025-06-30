@@ -1,0 +1,62 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://natebjones.substack.com/feed",
+        "options": {}
+      },
+      "id": "RSS_Trigger",
+      "name": "RSS Feed Trigger",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract title, link, and first paragraph\nconst title = item.title;\nconst link = item.link;\nconst content = item['content:encoded'] || item.content || '';\nconst firstParagraph = content.split(/<p>|\n/)[1] || '';\nreturn [{ json: { title, link, firstParagraph } }];"
+      },
+      "id": "ExtractContent",
+      "name": "Extract Content",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "resource": "completion",
+        "model": "gpt-3.5-turbo",
+        "prompt": "Summarize this Substack post in 1 engaging sentence for Twitter: {{$json[\"firstParagraph\"]}}",
+        "temperature": 0.7
+      },
+      "id": "OpenAI_Summary",
+      "name": "OpenAI Summary",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Format tweet text\nconst hashtags = '#AI #newsletter';\nconst mention = '@natebjones';\nconst tweetText = `New essay: ‘${$json.title}’\n\n${$json[\"choices\"][0][\"text\"]}\n\n${$json.link} ${hashtags} ${mention}`;\nreturn [{ json: { tweetText } }];"
+      },
+      "id": "FormatTweet",
+      "name": "Format Tweet",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "RSS Feed Trigger": {
+      "main": [[{"node": "Extract Content", "type": "main", "index": 0}]]
+    },
+    "Extract Content": {
+      "main": [[{"node": "OpenAI Summary", "type": "main", "index": 0}]]
+    },
+    "OpenAI Summary": {
+      "main": [[{"node": "Format Tweet", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "id": "substack-to-twitter-auto-post"
+}
