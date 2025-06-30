@@ -13,10 +13,10 @@ interface HeaderProps {
 export function Header({ posts, onSearchResults }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-slate-700 dark:bg-slate-900/95 dark:supports-[backdrop-filter]:bg-slate-900/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container flex items-center justify-between h-16 px-4 mx-auto">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl text-slate-900 dark:text-slate-100">
-            {/* <BookOpen className="h-6 w-6" /> */}
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-slate-100">
+            {/* <BookOpen className="w-6 h-6" /> */}
             <Image
               src="/nate 2.png"
               alt="Nate's Digital Garden Logo"
@@ -26,30 +26,36 @@ export function Header({ posts, onSearchResults }: HeaderProps) {
             />
             <span>Nate's Digital Garden</span>
           </Link>
-
-          <nav className="hidden md:flex items-center gap-6">
-            <Link
-              href="/"
-              className="text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 transition-colors"
-            >
-              Home
-            </Link>
-            <Link
-              href="/archive"
-              className="text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 transition-colors"
-            >
-              Archive
-            </Link>
-            <Link
-              href="/about"
-              className="text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 transition-colors"
-            >
-              About
-            </Link>
-          </nav>
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Links, Mentorship, About - ordered and spaced */}
+          <a
+            href="https://linktr.ee/natebjones"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden text-sm font-medium text-purple-700 transition-colors hover:text-purple-900 dark:text-purple-300 dark:hover:text-purple-100 md:inline-block"
+            style={{ marginRight: '1.25rem' }}
+          >
+            Links
+          </a>
+          <a
+            href="https://product-templates.notion.site/How-I-accelerate-careers-5c922ee9270243fea8759fa4118e6b41"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden text-sm font-medium text-pink-700 transition-colors hover:text-pink-900 dark:text-pink-300 dark:hover:text-pink-100 md:inline-block"
+            style={{ marginRight: '1.25rem' }}
+          >
+            Mentorship
+          </a>
+          <Link
+            href="/about"
+            className="hidden text-sm font-medium transition-colors text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 md:inline-block"
+            style={{ marginRight: '2rem' }}
+          >
+            About
+          </Link>
+          <div style={{ width: '1.5rem' }} />
           <Search posts={posts} onResults={onSearchResults} />
 
           <div className="flex items-center gap-2">
@@ -57,10 +63,10 @@ export function Header({ posts, onSearchResults }: HeaderProps) {
               href={process.env.NEXT_PUBLIC_SUBSTACK_URL || '#'}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-900 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:focus:ring-slate-600"
+              className="inline-flex items-center justify-center w-10 h-10 transition-colors bg-white border rounded-md border-slate-200 text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:focus:ring-slate-600"
               aria-label="Visit Substack"
             >
-              <Rss className="h-4 w-4" />
+              <Rss className="w-4 h-4" />
             </Link>
 
             <ThemeToggle />

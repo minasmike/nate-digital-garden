@@ -9,6 +9,7 @@ export interface SubstackPost {
   categories?: string[];
   contentSnippet?: string;
   isoDate?: string;
+  image?: string; // Optional image URL
 }
 
 export interface SearchResult {

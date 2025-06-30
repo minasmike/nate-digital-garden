@@ -6,6 +6,15 @@ import { Footer } from '@/components/footer';
 import { PostCard } from '@/components/post-card';
 import { SubstackPost, SearchResult } from '@/types';
 import { Sparkles, BookOpen, Search as SearchIcon } from 'lucide-react';
+import { decode } from 'he';
+import { stripHtml } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
+import {
+  ModalProvider,
+  ModalBody,
+  ModalContent,
+  useModal
+} from '@/components/modal';
 
 export default function Home() {
   const [posts, setPosts] = useState<SubstackPost[]>([]);
@@ -14,6 +23,8 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAllPosts, setShowAllPosts] = useState(false);
+  const [modalPost, setModalPost] = useState<SubstackPost | null>(null);
 
   useEffect(() => {
     async function loadPosts() {
@@ -48,7 +59,44 @@ export default function Home() {
     }
   };
 
-  const displayPosts = isSearchActive ? searchResults.map(r => r.post) : posts.slice(0, 10);
+  return (
+    <ModalProvider>
+      <HomeContent
+        posts={posts}
+        filteredPosts={filteredPosts}
+        searchResults={searchResults}
+        isLoading={isLoading}
+        isSearchActive={isSearchActive}
+        error={error}
+        showAllPosts={showAllPosts}
+        setShowAllPosts={setShowAllPosts}
+        modalPost={modalPost}
+        setModalPost={setModalPost}
+        handleSearchResults={handleSearchResults}
+      />
+    </ModalProvider>
+  );
+}
+
+function HomeContent({
+  posts,
+  filteredPosts,
+  searchResults,
+  isLoading,
+  isSearchActive,
+  error,
+  showAllPosts,
+  setShowAllPosts,
+  modalPost,
+  setModalPost,
+  handleSearchResults,
+}: any) {
+  const { open, setOpen } = useModal();
+  const displayPosts = isSearchActive
+    ? searchResults.map((r: any) => r.post)
+    : showAllPosts
+    ? posts
+    : posts.slice(0, 10);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -65,7 +113,6 @@ export default function Home() {
                   Nate's Digital Garden
                 </h1>
               </div>
-
               <p className="mb-8 text-lg leading-relaxed text-slate-600 dark:text-slate-300">
                 An AI-enhanced collection of thoughts, ideas, and insights.
                 Automatically synced from Substack with semantic search to help you discover
@@ -137,20 +184,53 @@ export default function Home() {
                   <p className="text-slate-600 dark:text-slate-400">
                     {isSearchActive
                       ? 'Posts matching your search query'
-                      : 'Recent thoughts and insights from the garden'
-                    }
+                      : 'Recent thoughts and insights from the garden'}
                   </p>
                 </div>
-
                 <div className="grid gap-6 md:gap-8">
-                  {displayPosts.map((post) => (
-                    <PostCard key={post.id} post={post} />
+                  {displayPosts.map((post: SubstackPost) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      onPreview={() => {
+                        setModalPost(post);
+                        setOpen(true);
+                      }}
+                      onSummarize={async (post: SubstackPost) => {
+                        let plainText = decode(stripHtml(post.content));
+                        // Limit input to 2048 characters for Hugging Face API
+                        if (plainText.length > 2048) {
+                          plainText = plainText.slice(0, 2048);
+                        }
+                        setModalPost({ ...post, summary: 'Loading summary...' });
+                        setOpen(true);
+                        try {
+                          const res = await fetch('/api/claude-summary', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ content: plainText })
+                          });
+                          const data = await res.json();
+                          if (data.error) {
+                            setModalPost((prev: SubstackPost | null) => prev && prev.id === post.id ? { ...prev, summary: `Error: ${data.error}` } : prev);
+                          } else {
+                            setModalPost((prev: SubstackPost | null) => prev && prev.id === post.id ? { ...prev, summary: data.summary || 'No summary available.' } : prev);
+                          }
+                        } catch (e: unknown) {
+                          let message = 'Failed to summarize.';
+                          if (e && typeof e === 'object' && 'message' in e) message = (e as any).message;
+                          setModalPost((prev: SubstackPost | null) => prev && prev.id === post.id ? { ...prev, summary: message } : prev);
+                        }
+                      }}
+                    />
                   ))}
                 </div>
-
-                {!isSearchActive && posts.length > 10 && (
+                {!isSearchActive && posts.length > 10 && !showAllPosts && (
                   <div className="mt-12 text-center">
-                    <button className="inline-flex items-center gap-2 px-6 py-3 text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+                    <button
+                      className="inline-flex items-center gap-2 px-6 py-3 text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+                      onClick={() => setShowAllPosts(true)}
+                    >
                       <BookOpen className="w-4 h-4" />
                       View All Posts ({posts.length})
                     </button>
@@ -161,6 +241,63 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      {/* Modal for preview */}
+      <ModalBody>
+        {modalPost && (
+          <ModalContent className="w-full max-w-4xl p-10 md:p-14">
+            <h2 className="mb-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{decode(modalPost.title)}</h2>
+            <div className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+              <span>{modalPost.author}</span> · <span>{formatDate(modalPost.pubDate)}</span>
+            </div>
+            {modalPost.summary ? (
+              <>
+                <div className="p-4 mb-6 text-base text-blue-900 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-100">
+                  <strong>Summary:</strong> {modalPost.summary}
+                </div>
+                {modalPost.image && (/(\.(mp4|webm|ogg)$)/i.test(modalPost.image) ? (
+                  <video
+                    src={modalPost.image}
+                    controls
+                    autoPlay
+                    playsInline
+                    preload="metadata"
+                    poster={modalPost.image.replace(/\.(mp4|webm|ogg)$/i, '.jpg')}
+                    className="w-full mb-4 rounded"
+                    style={{ maxHeight: '60vh', background: '#000' }}
+                  >
+                    <span className="sr-only">video preview</span>
+                    Sorry, your browser does not support embedded videos.
+                  </video>
+                ) : (
+                  <img src={modalPost.image} alt={decode(modalPost.title)} className="w-full mb-4 rounded" />
+                ))}
+              </>
+            ) : (
+              <>
+                {modalPost.image && (/(\.(mp4|webm|ogg)$)/i.test(modalPost.image) ? (
+                  <video
+                    src={modalPost.image}
+                    controls
+                    autoPlay
+                    playsInline
+                    preload="metadata"
+                    poster={modalPost.image.replace(/\.(mp4|webm|ogg)$/i, '.jpg')}
+                    className="w-full mb-4 rounded"
+                    style={{ maxHeight: '60vh', background: '#000' }}
+                  >
+                    <span className="sr-only">video preview</span>
+                    Sorry, your browser does not support embedded videos.
+                  </video>
+                ) : (
+                  <img src={modalPost.image} alt={decode(modalPost.title)} className="w-full mb-4 rounded" />
+                ))}
+                <div dangerouslySetInnerHTML={{ __html: modalPost.content }} />
+              </>
+            )}
+          </ModalContent>
+        )}
+      </ModalBody>
 
       <Footer />
     </div>
